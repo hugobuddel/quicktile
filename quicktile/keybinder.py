@@ -97,8 +97,7 @@ class KeyBinder(object):
 
         .. _XGrabKey: https://tronche.com/gui/x/xlib/input/XGrabKey.html
         """
-        parsed = self.parse_accel(accel)
-        if parsed:
+        if parsed := self.parse_accel(accel):
             keycode, modmask = parsed
         else:
             return False
@@ -161,7 +160,7 @@ class KeyBinder(object):
         """
         handle = handle or self.xroot.display
 
-        for _ in range(0, handle.pending_events()):
+        for _ in range(handle.pending_events()):
             xevent = handle.next_event()
             if xevent.type == X.KeyPress:
                 self.handle_keypress(xevent)

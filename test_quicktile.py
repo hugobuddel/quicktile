@@ -446,8 +446,7 @@ class TestRectangle(unittest.TestCase):  # pylint: disable=R0904
                 rect._replace(x=2 + 2))
             self.assertEqual(rect.moved_off_of(
                 Rectangle(x=rect.x2 - 2, y=rect.y2 - 5,
-                          width=thickness, height=length)),
-                rect._replace(x=2 - 2))
+                          width=thickness, height=length)), rect._replace(x=0))
 
         # Regression test for a real-world "pushes in the wrong direction"
         self.assertEqual(

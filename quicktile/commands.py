@@ -48,8 +48,7 @@ class CommandRegistry(object):
         self.help = {}      # type: Dict[str, str]
 
     def __iter__(self) -> Iterator[str]:
-        for name in self.commands:
-            yield name
+        yield from self.commands
 
     def __str__(self) -> str:
         """Pretty-print a table of registered commands"""
@@ -202,9 +201,7 @@ class CommandRegistry(object):
 
         .. todo:: Allow commands to report success or failure
         """
-        cmd = self.commands.get(command, None)
-
-        if cmd:
+        if cmd := self.commands.get(command, None):
             logging.debug("Executing command '%s' with arguments %r, %r",
                           command, args, kwargs)
 
@@ -266,11 +263,7 @@ def cycle_dimensions(winman: WindowManager,
         logging.debug("Restarting cycle position sequence")
         cmd_idx, pos = None, -1
 
-    if cmd_idx == state.get('cmd_idx', 0):
-        pos = (pos + 1) % len(dims)
-    else:
-        pos = 0
-
+    pos = (pos + 1) % len(dims) if cmd_idx == state.get('cmd_idx', 0) else 0
     winman.set_property(win, '_QUICKTILE_CYCLE_POS',
         [int(state.get('cmd_idx', 0)), pos],
         prop_type=Xatom.INTEGER, format_size=32)
@@ -507,7 +500,7 @@ def trigger_keyboard_action(
         method name to look up on ``win``.
     """
 
-    getattr(win, 'keyboard_' + command)()
+    getattr(win, f'keyboard_{command}')()
 
 
 @commands.add('workspace-go-next', 1, windowless=True)

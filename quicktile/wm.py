@@ -42,16 +42,16 @@ def persist_maximization(win: Wnck.Window, keep_maximize: bool=True):
     # Unmaximize and record the types we may need to restore
     max_types, maxed = ['', '_horizontally', '_vertically'], []
     for maxtype in max_types:
-        if getattr(win, 'is_maximized' + maxtype)():
+        if getattr(win, f'is_maximized{maxtype}')():
             maxed.append(maxtype)
-            getattr(win, 'unmaximize' + maxtype)()
+            getattr(win, f'unmaximize{maxtype}')()
 
     yield
 
     # Restore maximization if asked
     if maxed and keep_maximize:
         for maxtype in maxed:
-            getattr(win, 'maximize' + maxtype)()
+            getattr(win, f'maximize{maxtype}')()
 
 
 class WindowManager(object):
@@ -117,12 +117,11 @@ class WindowManager(object):
         # NOTE: Not using Gdk.Display.get_n_monitors because Kubuntu 16.04 LTS
         # doesn't have a new enough Gdk to have that API.
         n_screens = self.gdk_screen.get_n_monitors()
-        monitors = []
-        for idx in range(0, n_screens):
-            monitors.append(Rectangle.from_gdk(
-                self.gdk_screen.get_monitor_geometry(idx)) *
-                self.gdk_screen.get_monitor_scale_factor(idx))
-            # TODO: Look into using python-xlib to match x_root use
+        monitors = [
+            Rectangle.from_gdk(self.gdk_screen.get_monitor_geometry(idx))
+            * self.gdk_screen.get_monitor_scale_factor(idx)
+            for idx in range(n_screens)
+        ]
 
         logging.debug("Loaded monitor geometry: %r", monitors)
 
@@ -130,31 +129,26 @@ class WindowManager(object):
         if monitors:
             self.usable_region.set_monitors(monitors)
         else:
-            if self.usable_region:
-                logging.error("WorkArea.update_geometry_cache received "
-                              "an empty monitor region! Using cached value.")
-                return
-            else:
+            if not self.usable_region:
                 raise Exception("Could not retrieve desktop geometry")
 
+            logging.error("WorkArea.update_geometry_cache received "
+                          "an empty monitor region! Using cached value.")
+            return
         # Gather all struts
         struts = []
         for wid in [self.x_root.id] + list(self.get_property(
                 self.x_root.id, '_NET_CLIENT_LIST', Xatom.WINDOW, [])):
             win = self.x_display.create_resource_object('window', wid)
-            result = self.get_property(
-                win, '_NET_WM_STRUT_PARTIAL', Xatom.CARDINAL)
-            if result:
+            if result := self.get_property(
+                win, '_NET_WM_STRUT_PARTIAL', Xatom.CARDINAL
+            ):
                 struts.append(StrutPartial(*result))
                 logging.debug("Gathered _NET_WM_STRUT_PARTIAL value: %s",
                               struts)
-            else:
-                # TODO: Unit test this fallback
-                result = self.get_property(
-                    win, '_NET_WM_STRUT', Xatom.CARDINAL)
-                if result:
-                    struts.append(StrutPartial(*result))
-                    logging.debug("Gathered _NET_WM_STRUT value: %s", struts)
+            elif result := self.get_property(win, '_NET_WM_STRUT', Xatom.CARDINAL):
+                struts.append(StrutPartial(*result))
+                logging.debug("Gathered _NET_WM_STRUT value: %s", struts)
 
         # Get the list of struts from the root window
         self.usable_region.set_panels(struts)
@@ -232,11 +226,7 @@ class WindowManager(object):
         :param wrap_around: Whether relative indexes should wrap around.
         :returns: The workspace object or :any:`None` if no match was found.
         """
-        if window:
-            cur = window.get_workspace()
-        else:
-            cur = self.screen.get_active_workspace()
-
+        cur = window.get_workspace() if window else self.screen.get_active_workspace()
         if not cur:
             return None  # It's either pinned or on no workspaces
 

@@ -76,10 +76,7 @@ def clamp_idx(idx: int, stop: int, wrap: bool=True) -> int:
 
     :returns: The adjusted value.
     """
-    if wrap:
-        return idx % stop
-    else:
-        return max(min(idx, stop - 1), 0)
+    return idx % stop if wrap else max(min(idx, stop - 1), 0)
 
 
 def euclidean_dist(vec1: Iterable, vec2: Iterable) -> float:
@@ -178,11 +175,12 @@ def fmt_table(rows: Union[Dict, Iterable[List]],
         maxlen = max(len(x[pos]) for x in rows if len(x) > pos)
         col_maxlens.append(max(maxlen, len(header)))
 
-    def fmt_row(row, pad=' ', indent=0, min_width=0):  # TODO: Type signature
+    def fmt_row(row, pad=' ', indent=0, min_width=0):    # TODO: Type signature
         """Format a fmt_table row"""
-        result = []
-        for width, label in zip(col_maxlens, row):
-            result.append('%s%s ' % (' ' * indent, label.ljust(width, pad)))
+        result = [
+            '%s%s ' % (' ' * indent, label.ljust(width, pad))
+            for width, label in zip(col_maxlens, row)
+        ]
 
         _width = sum(len(x) for x in result)
         if _width < min_width:
@@ -823,8 +821,11 @@ class UsableRegion(object):
         for strut in self._struts:
             # TODO: Test for off-by-one bugs
             # TODO: Think of a more efficient way to do this
-            for strut_pair in strut.as_rects(desktop_rect):
-                    strut_rects.append(self._trim_strut(strut_pair))
+            strut_rects.extend(
+                self._trim_strut(strut_pair)
+                for strut_pair in strut.as_rects(desktop_rect)
+            )
+
         self._strut_rects = strut_rects
 
     def _trim_strut(self, strut: Tuple[Edge, Rectangle]) -> Rectangle:
@@ -916,10 +917,7 @@ class UsableRegion(object):
         :param rect: A rectangle (possibly of zero width and height),
             representing a point of reference for the monitor search.
         """
-        if self._monitors:
-            return rect.closest_of(self._monitors)
-        else:
-            return None
+        return rect.closest_of(self._monitors) if self._monitors else None
 
     def __bool__(self) -> bool:
         """A :class:`UsableRegion` is truthy if it has at least one monitor

@@ -46,9 +46,9 @@ def read(*names, **kwargs):
 def find_version(*file_paths):
     """Extract the value of ``__version__`` from the given file"""
     version_file = read(*file_paths)
-    version_match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
-    if version_match:
+    if version_match := re.search(
+        r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", version_file, re.M
+    ):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 

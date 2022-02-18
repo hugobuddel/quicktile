@@ -164,15 +164,13 @@ class QuickTileApp(object):
         else:
             dbus_result = dbus_api.init(self.commands, self.winman)
 
-        # If either persistent backend loaded, start the GTK main loop.
-        if o_keybinder or dbus_result:
-            try:
-                Gtk.main()
-            except KeyboardInterrupt:
-                pass
-            return True
-        else:
+        if not o_keybinder and not dbus_result:
             return False
+        try:
+            Gtk.main()
+        except KeyboardInterrupt:
+            pass
+        return True
 
     def show_binds(self) -> None:
         """Print a formatted readout of defined keybindings and the modifier

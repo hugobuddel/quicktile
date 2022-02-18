@@ -210,7 +210,7 @@ def format_annotation(annotation, *args, **kwargs):
             annotation.__module__, annotation.__qualname__)
         for prefix in qualname_ignored_prefixes:
             if full_name.startswith(prefix):
-                return ':py:class:`' + full_name[len(prefix):] + '`'
+                return f':py:class:`{full_name[len(prefix):]}`'
         override = qualname_overrides.get(full_name)
         if override is not None:
             return ':py:{}:`~{}`'.format(*override)

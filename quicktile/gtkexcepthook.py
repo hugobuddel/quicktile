@@ -88,10 +88,7 @@ class Scope(enum.Enum):
 
     def __str__(self):
         """Override str() to return either the variant name or '?' for NONE"""
-        if self.value is Scope.NONE:
-            return '?'
-        else:
-            return str(self.name)[0].upper()
+        return '?' if self.value is Scope.NONE else str(self.name)[0].upper()
 
 
 def lookup(name: str,
@@ -159,7 +156,7 @@ def gather_vars(frame_rec: inspect.FrameInfo,
     frame = frame_rec[0]
     all_vars, prev, name, scope = {}, None, '', None
     for token_tuple in tokenize_frame(frame_rec):
-        t_type, t_str = token_tuple[0:2]
+        t_type, t_str = token_tuple[:2]
         if (t_type == tokenize.NAME and  # pylint: disable=no-member
                 t_str not in keyword.kwlist):
             if not name:
@@ -227,8 +224,14 @@ def analyse(exctyp: Type[BaseException],
         all_vars = gather_vars(frame_rec, args_tuple[3])
 
         trace_frame = 'File {!r}, line {:d}, {}{}'.format(
-            fname, lineno, funcname, inspect.formatargvalues(*args_tuple,
-            formatvalue=lambda v: '=' + pydoc.text.repr(v)))
+            fname,
+            lineno,
+            funcname,
+            inspect.formatargvalues(
+                *args_tuple, formatvalue=lambda v: f'={pydoc.text.repr(v)}'
+            ),
+        )
+
 
         trace.write(frame_wrapper.fill(trace_frame) + '\n')
         trace.write(''.join(['    ' + x.replace('\t', '  ')
